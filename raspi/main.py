@@ -21,7 +21,7 @@ def send_to_the_clouds(data):
   print json_data
 
 def _updateTempLeds(green, yellow, red):
-  GPIO.output(TEMP_LED_GREEN, GPIO.LOW if green else GPIO.LOW)
+  GPIO.output(TEMP_LED_GREEN, GPIO.HIGH if green else GPIO.LOW)
   GPIO.output(TEMP_LED_YELLOW, GPIO.HIGH if yellow else GPIO.LOW)
   GPIO.output(TEMP_LED_RED, GPIO.HIGH if red else GPIO.LOW)
 
