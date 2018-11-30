@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Device Monitoring</title>
+  <script src="https://www.gstatic.com/firebasejs/5.5.5/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/5.5.5/firebase-firestore.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js"></script>
+  <script src="main.js"></script>
+</head>
+<body>
+
+  <header>
+    Device:
+    <button onclick="C.nextDevice()">Next</button>
+  </header>
+
+  <main>
+    <canvas id="linearChart" width="400" height="300"></canvas>
+
+    <div>
+      <h3>Latest read:</h3>
+      Temp: <span id='tempRead'></span> | Humidity: <span id='humidRead'></span>
+      <div id='timeOfRead'></div>
+    </div>
+  </main>
+  
+</body>
+</html>

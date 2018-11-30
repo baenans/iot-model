@@ -1,0 +1,9 @@
+syntax = "proto2";
+package pb;
+
+message SensorEvent {
+    required int32 deviceId = 1;
+    required int32 timestamp = 2;
+    required float humidity = 3;
+    required float temperature = 4;
+}
