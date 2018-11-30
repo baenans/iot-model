@@ -1,3 +1,6 @@
+
+/raspi/service-account.json
+/raspi/venv/
 # Logs
 logs
 *.log
