@@ -1,5 +1,6 @@
 SECRETS
 .DS_Store
+.vscode
 # Raspi client
 /raspi/service-account.json
 /raspi/venv/
