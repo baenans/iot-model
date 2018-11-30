@@ -4,6 +4,7 @@ SECRETS
 # Raspi client
 /raspi/service-account.json
 /raspi/venv/
+raspi/sensorevent_pb2.pyc
 
 # Arduino client
 arduino/ESP8266_Temp_Sensor/config.h
