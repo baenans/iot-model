@@ -45,7 +45,7 @@ def _updateDashboard(temp, humi):
 
   if   humi < 40:
     _updateHumiLeds(True, False, False)
-  elif humi >= 40 and temp < 70:
+  elif humi >= 40 and humi < 70:
     _updateHumiLeds(False, True, False)
   else:
     _updateHumiLeds(False, False, True)
@@ -63,7 +63,7 @@ def on_message(client, userdata, msg):
 
 def configureGPIO():
   GPIO.setmode(GPIO.BCM)
-  
+
   GPIO.setup(TEMP_LED_RED, GPIO.OUT)
   GPIO.setup(TEMP_LED_YELLOW, GPIO.OUT)
   GPIO.setup(TEMP_LED_GREEN, GPIO.OUT)
