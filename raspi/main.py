@@ -21,7 +21,7 @@ def send_to_the_clouds(data):
   print json_data
 
 def _updateTempLeds(green, yellow, red):
-  GPIO.output(TEMP_LED_GREEN, GPIO.HIGH if green else GPIO.LOW)
+  GPIO.output(TEMP_LED_GREEN, GPIO.LOW if green else GPIO.LOW)
   GPIO.output(TEMP_LED_YELLOW, GPIO.HIGH if yellow else GPIO.LOW)
   GPIO.output(TEMP_LED_RED, GPIO.HIGH if red else GPIO.LOW)
 
@@ -36,6 +36,7 @@ def updateTemperature(temp):
 def on_message(client, userdata, msg):
   event = sensorevent_pb2.SensorEvent()
   event.ParseFromString(msg.payload)
+  updateTemperature(event.temperature)
   send_to_the_clouds({
     'timestamp': event.timestamp,
     'temperature': event.temperature,
@@ -53,6 +54,9 @@ def main():
   GPIO.setup(TEMP_LED_RED, GPIO.OUT)
   GPIO.setup(TEMP_LED_YELLOW, GPIO.OUT)
   GPIO.setup(TEMP_LED_GREEN, GPIO.OUT)
+  GPIO.output(TEMP_LED_RED, GPIO.LOW)
+  GPIO.output(TEMP_LED_YELLOW, GPIO.LOW)
+  GPIO.output(TEMP_LED_GREEN, GPIO.LOW)
 
   client.loop_forever()
 
