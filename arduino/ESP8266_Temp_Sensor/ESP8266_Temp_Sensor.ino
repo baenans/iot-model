@@ -74,7 +74,7 @@ void loop() {
   long now = millis();
   time_t timestamp = time(nullptr);
   
-  if (now - lastMsg > 10000) {
+  if (now - lastMsg > 2000) {
     lastMsg = now;
 
     TempAndHumidity sensorValues = dht.getTempAndHumidity();

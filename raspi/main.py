@@ -7,23 +7,28 @@ from google.cloud import pubsub_v1
 PUBLISHER = pubsub_v1.PublisherClient()
 TOPIC_NAME = PUBLISHER.topic_path('temp-humidity-monitoring', 'device-ingest')
 
+# GPIO
 BUZZER = 23
-
 TEMP_LED_RED = 5
 TEMP_LED_YELLOW = 6
 TEMP_LED_GREEN = 13
-
 HUMI_LED_RED = 17
 HUMI_LED_GREEN = 27
 HUMI_LED_BLUE = 22
+
+CLOUD_REFRESH_INTERVAL = 15
+last_cloud_refresh = 0
 
 def on_connect(client, userdata, flags, rc):
   client.subscribe("events", 2)
 
 def send_to_the_clouds(data):
-  json_data = json.dumps(data)
-  # PUBLISHER.publish(TOPIC_NAME, json_data)
-  print json_data
+  min_refresh_timestamp = last_cloud_refresh + CLOUD_REFRESH_INTERVAL
+  if data.timestamp >= min_refresh_timestamp:
+    json_data = json.dumps(data)
+    PUBLISHER.publish(TOPIC_NAME, json_data)
+    last_cloud_refresh = data.timestamp
+    print json_data
 
 def _updateTempLeds(green, yellow, red):
   GPIO.output(TEMP_LED_GREEN, GPIO.HIGH if green else GPIO.LOW)
@@ -51,6 +56,7 @@ def _updateDashboard(temp, humi):
     _updateHumiLeds(False, False, True)
 
 def on_message(client, userdata, msg):
+  print "message"
   event = sensorevent_pb2.SensorEvent()
   event.ParseFromString(msg.payload)
   _updateDashboard(event.temperature, event.humidity)
