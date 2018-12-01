@@ -8,7 +8,7 @@ from google.cloud import pubsub_v1
 class HubDevice:
   def __init__(self):
     self.CLOUD_PUBSUB_PUBLISHER = pubsub_v1.PublisherClient()
-    self.TOPIC_NAME = self.CLOUD_PUBSUB_PUBLISHER.topic_path('temp-humidity-monitoring', 'device-ingest')
+    self.CLOUD_PUBSUB_TOPIC_NAME = self.CLOUD_PUBSUB_PUBLISHER.topic_path('temp-humidity-monitoring', 'device-ingest')
 
     # GPIO
     self.BUZZER = 23
@@ -35,11 +35,12 @@ class HubDevice:
   def send_to_the_clouds(self, data):
     min_refresh = self.last_cloud_refresh + self.CLOUD_REFRESH_INTERVAL
     print min_refresh
-    print data.timestamp
-    print data.timestamp >= min_refresh
-    if data.timestamp >= min_refresh:
+    print data['timestamp']
+    print data['timestamp'] >= min_refresh
+    print data
+    if data['timestamp'] >= min_refresh:
       json_data = json.dumps(data)
-      self.CLOUD_PUBSUB_PUBLISHER.publish(TOPIC_NAME, json_data)
+      self.CLOUD_PUBSUB_PUBLISHER.publish(self.CLOUD_PUBSUB_TOPIC_NAME, json_data)
       self.last_cloud_refresh = data.timestamp
       print json_data
 
