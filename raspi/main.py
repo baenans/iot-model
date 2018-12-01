@@ -69,7 +69,6 @@ class HubDevice:
       self._updateHumiLeds(False, False, True)
 
   def on_message(self, client, userdata, msg):
-    print "message"
     event = sensorevent_pb2.SensorEvent()
     event.ParseFromString(msg.payload)
     self._updateDashboard(event.temperature, event.humidity)
