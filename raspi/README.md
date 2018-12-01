@@ -1,5 +1,7 @@
 # Raspberry Pi client for IoT Model
 
+- TODO: install.sh
+- TODO: systemctl
 
 - Create a service account in the Google Cloud Console
 - Add the service-account.json credentials file under /raspbi
