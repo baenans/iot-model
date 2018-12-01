@@ -1,6 +1,7 @@
 const functions = require('firebase-functions');
 const {BigQuery} = require('@google-cloud/bigquery');
 const admin = require('firebase-admin');
+const cors = require('cors')({origin: true});
 
 /**
  * Firestore Client
@@ -64,6 +65,8 @@ exports.threeDaysReport = functions.https.onRequest((req, res) => {
     })
     .then(result => {
       const rows = result[0];
-      return res.status(200).send(JSON.stringify(rows));
+      return cors(req, res, () => {
+        res.status(200).send(JSON.stringify(rows))
+      });
     });
 });
