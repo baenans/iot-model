@@ -49,7 +49,7 @@ function insertIntoFirestore(data) {
     timestamp: data.timestamp
   }
   return firestore
-    .collection(`devices/device${data.device_id}/events`)
+    .collection(`devices/${data.device_id}/events`)
     .add(newData)
 }
 
