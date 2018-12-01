@@ -1,5 +1,7 @@
 let C = (() => {
 
+  const MS_PER_MINUTE = 60000
+
   let db
   let devices = []
   let currentDevice = 0
@@ -7,9 +9,31 @@ let C = (() => {
   let unsubscribeDeviceFromSnapshots
   let ctx
   let lineChart
-  let tempRead, humidRead, timeOfRead
+  let timeOfRead
+  let tempGauge, humidGauge
+  let minutesToQuery = 5
+  let timeUnit = 'minute'
+  let minimumTimestamp = new Date(new Date() - minutesToQuery * MS_PER_MINUTE)
 
   let initialize = () => {
+
+    tempGauge = new JustGage({
+      id: "tempGauge",
+      value: 0,
+      min: 0,
+      max: 100,
+      title: "Temperature",
+      label: "C"
+    })
+
+    humidGauge = new JustGage({
+      id: "humidGauge",
+      value: 0,
+      min: 0,
+      max: 100,
+      title: "Humidity",
+      label: "%"
+    })
 
     firebase.initializeApp({
       apiKey: "AIzaSyCePuF7C7WqJ5LP1bL6wqP09X6QZsyXWpw",
@@ -19,12 +43,11 @@ let C = (() => {
       storageBucket: "temp-humidity-monitoring.appspot.com",
       messagingSenderId: "114078303303"
     })
+
     db = firebase.firestore()
     db.settings({timestampsInSnapshots: true});
     db.collection("devices").get().then(function(querySnapshot) {
-      console.log(querySnapshot)
       querySnapshot.forEach(function(doc) {
-        console.log(doc, doc.data, doc.id)
         devices.push(doc.id)
       })
       setDevice(0)
@@ -32,10 +55,47 @@ let C = (() => {
 
     ctx = document.getElementById("linearChart").getContext('2d')
 
-    tempRead = document.getElementById('tempRead')
-    humidRead = document.getElementById('humidRead')
     timeOfRead = document.getElementById('timeOfRead')
 
+    var radios = document.forms["intervals"].elements["timeQuery"]
+    for(var i = 0, max = radios.length; i < max; i++) {
+      radios[i].addEventListener('click', (e) => {changeGraphDisplayInterval(e.target.value)} )
+    }
+  }
+
+  let changeGraphDisplayInterval = (value) => {
+
+    switch(value) {
+      case 'last_minute':
+        minutesToQuery = 1
+        timeUnit = 'second'
+        break;
+      case 'last_half_hour':
+        minutesToQuery = 30
+        timeUnit = 'minute'
+        break;
+      case 'last_hour':
+        minutesToQuery = 60
+        timeUnit = 'minute'
+        break;
+      case 'last_twelve_hours':
+        minutesToQuery = 60 * 12
+        timeUnit = 'hour'
+        break;
+      case 'last_day':
+        minutesToQuery = 60 * 24
+        timeUnit = 'hour'
+        break;
+      case 'last_seven_days':
+        minutesToQuery = 60 * 24 * 3
+        timeUnit = 'day'
+        break;
+      default:
+        minutesToQuery = 5
+        timeUnit = 'minute'
+    }
+    minimumTimestamp = new Date(new Date() - minutesToQuery * MS_PER_MINUTE)
+    getDeviceData()
   }
 
   let setDevice = (idx) => {
@@ -75,7 +135,7 @@ let C = (() => {
           xAxes: [{
             type: 'time',
             time: {
-                unit: 'second'
+              unit: timeUnit
             }
           }],
           yAxes: [{
@@ -92,9 +152,9 @@ let C = (() => {
   }
 
   let updateLatestValues = (temp, humid, time) => {
-    tempRead.innerText = temp
-    humidRead.innerText = humid
     timeOfRead.innerText = time
+    tempGauge.refresh(temp)
+    humidGauge.refresh(humid)
   }
 
   let handleDeviceSnapshot = (snapshot) => {
@@ -118,8 +178,6 @@ let C = (() => {
   let getDeviceData = async () => {
     let deviceId = devices[currentDevice]
 
-    console.log(devices, deviceId)
-
     if (unsubscribeDeviceFromSnapshots)
       unsubscribeDeviceFromSnapshots()
 
@@ -127,8 +185,8 @@ let C = (() => {
       .collection('devices')
       .doc(deviceId)
       .collection('events')
+      .where("timestamp", ">=", minimumTimestamp)
       .orderBy('timestamp', 'desc')
-      .limit(limit)
       .onSnapshot(handleDeviceSnapshot)
   }
 

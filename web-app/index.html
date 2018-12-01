@@ -8,23 +8,64 @@
   <script src="https://www.gstatic.com/firebasejs/5.5.5/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/5.5.5/firebase-firestore.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js"></script>
+  <script src="./js/raphael-2.1.4.min.js"></script>
+  <script src="./js/justgage.js"></script>
   <script src="main.js"></script>
+  <style>
+    .gauges {
+      display: block;
+    }
+
+    #tempGauge, #humidGauge {
+      display: inline-block;
+    }
+
+    #linearChart {
+      max-width: 700px;
+    }
+  </style>
 </head>
 <body>
 
-  <header>
+  <!--<header>
     Device:
     <button onclick="C.nextDevice()">Next</button>
-  </header>
+  </header>-->
+
+  <div class='gauges'>
+    <div id="tempGauge" style="width:100px; height:80px"></div>
+    <div id="humidGauge" style="width:100px; height:80px"></div>
+    <div>on <span id='timeOfRead'></span></div>
+  </div>
+
+  <div>
+      <h3>Graph interval</h3>
+      <form id="intervals">
+        <input type="radio" id="last_minute" name="timeQuery" value="last_minute">
+        <label for="last_minute">1 min</label>
+  
+        <input type="radio" id="last_five_minutes" name="timeQuery" value="last_five_minutes" checked>
+        <label for="last_five_minutes">5 min</label>
+  
+        <input type="radio" id="last_half_hour" name="timeQuery" value="last_half_hour">
+        <label for="last_half_hour">30 min</label>
+  
+        <input type="radio" id="last_hour" name="timeQuery" value="last_hour">
+        <label for="last_hour">1 h</label>
+  
+        <input type="radio" id="last_twelve_hours" name="timeQuery" value="last_twelve_hours">
+        <label for="last_twelve_hours">12 h</label>
+  
+        <input type="radio" id="last_day" name="timeQuery" value="last_day">
+        <label for="last_day">1 d</label>
+  
+        <input type="radio" id="last_seven_days" name="timeQuery" value="last_seven_days">
+        <label for="last_seven_days">7 d</label>
+      </form>
+    </div>
 
   <main>
     <canvas id="linearChart" width="400" height="300"></canvas>
-
-    <div>
-      <h3>Latest read:</h3>
-      Temp: <span id='tempRead'></span> | Humidity: <span id='humidRead'></span>
-      <div id='timeOfRead'></div>
-    </div>
   </main>
   
 </body>
