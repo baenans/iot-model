@@ -34,15 +34,14 @@ class HubDevice:
 
   def send_to_the_clouds(self, data):
     min_refresh = self.last_cloud_refresh + self.CLOUD_REFRESH_INTERVAL
-    print min_refresh
-    print data['timestamp']
-    print data['timestamp'] >= min_refresh
-    print data
     if data['timestamp'] >= min_refresh:
       json_data = json.dumps(data)
       self.CLOUD_PUBSUB_PUBLISHER.publish(self.CLOUD_PUBSUB_TOPIC_NAME, json_data)
       self.last_cloud_refresh = data['timestamp']
       print json_data
+    else:
+      print "Not refreshing cloud on %d" % data['timestamp']
+  
 
   def _updateTempLeds(self, green, yellow, red):
     GPIO.output(self.TEMP_LED_GREEN, GPIO.HIGH if green else GPIO.LOW)
