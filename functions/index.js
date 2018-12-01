@@ -7,6 +7,7 @@ const admin = require('firebase-admin');
  */
 const app = admin.initializeApp(functions.config().firebase);
 const firestore = app.firestore();
+firestore.settings({ timestampsInSnapshots: true });
 
 /**
  * BigQuery Client
@@ -33,7 +34,7 @@ function insertIntoFirestore(data) {
   let newData = {
     temperature: data.temperature,
     humidity: data.humidity,
-    timestamp: data.timestamp
+    timestamp: new Date(data.timestamp * 1000)
   }
   return firestore
     .collection(`devices/${data.device_id}/events`)
