@@ -1,0 +1,11 @@
+[Unit]
+Description=Hub Device Service
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/home/pi/iot-model/raspi/run.sh > /home/pi/hub-device-daemon.log
+
+[Install]
+WantedBy=multi-user.target
+
