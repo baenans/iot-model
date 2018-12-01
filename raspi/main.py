@@ -96,7 +96,7 @@ class HubDevice:
     GPIO.output(self.HUMI_LED_RED, GPIO.LOW)
 
 def main():
-  hub = DeviceHub()
+  hub = HubDevice()
 
 if __name__ == '__main__':
   main()
