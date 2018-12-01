@@ -38,3 +38,32 @@ function insertIntoFirestore(data) {
     .collection(`devices/${data.device_id}/events`)
     .add(newData)
 }
+
+exports.threeDaysReport = functions.https.onRequest((req, res) => {
+  
+  const query = `SELECT 
+    EXTRACT(YEAR FROM timestamp) AS year,
+    EXTRACT(MONTH FROM timestamp) AS month,
+    EXTRACT(DAY FROM timestamp) AS day,
+    AVG(temperature) AS average_temperature, 
+    MIN(temperature) AS min_temperature,
+    MAX(temperature) AS max_temperature, 
+    AVG(humidity) AS average_humidity,
+    MIN(humidity) AS min_humidity,
+    MAX(humidity) AS max_humidity
+  FROM device_data.telemetry 
+  WHERE device_id = 'CNlmx974NM86zIfbPni2'
+  AND timestamp between timestamp_sub(current_timestamp, INTERVAL 3 DAY) and current_timestamp()
+  GROUP BY year, month, day
+  ORDER BY year DESC, month DESC, day DESC;`;
+
+  return bigquery
+    .query({
+      query: query,
+      useLegacySql: false
+    })
+    .then(result => {
+      const rows = result[0];
+      return res.status(200).send(JSON.stringify(rows));
+    });
+});
