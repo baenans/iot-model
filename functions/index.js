@@ -18,7 +18,6 @@ const table = dataset.table('telemetry');
 
 exports.ingestDeviceData = functions.pubsub.topic('device-ingest').onPublish((message) => {
   const payload = message.json;
-  console.log(payload);
   return Promise.all([
     insertIntoBigquery(payload),
     insertIntoFirestore(payload)
@@ -30,7 +29,6 @@ function insertIntoBigquery(data) {
 }
 
 function insertIntoFirestore(data) {
-  console.log(data)
   let newData = {
     temperature: data.temperature,
     humidity: data.humidity,
