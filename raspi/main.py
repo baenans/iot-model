@@ -41,7 +41,7 @@ class HubDevice:
     if data['timestamp'] >= min_refresh:
       json_data = json.dumps(data)
       self.CLOUD_PUBSUB_PUBLISHER.publish(self.CLOUD_PUBSUB_TOPIC_NAME, json_data)
-      self.last_cloud_refresh = data.timestamp
+      self.last_cloud_refresh = data['timestamp']
       print json_data
 
   def _updateTempLeds(self, green, yellow, red):
