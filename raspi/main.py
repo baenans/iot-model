@@ -76,7 +76,7 @@ class HubDevice:
       'timestamp': event.timestamp,
       'temperature': event.temperature,
       'humidity': event.humidity,
-      'device_id': event.deviceId
+      'device_id': 'CNlmx974NM86zIfbPni2' # TODO: (fbaena@) dynamic devices id
     })
 
   def configureGPIO(self):
