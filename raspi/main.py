@@ -35,6 +35,8 @@ class HubDevice:
   def send_to_the_clouds(self, data):
     min_refresh = self.last_cloud_refresh + self.CLOUD_REFRESH_INTERVAL
     print min_refresh
+    print data.timestamp
+    print data.timestamp >= min_refresh
     if data.timestamp >= min_refresh:
       json_data = json.dumps(data)
       self.CLOUD_PUBSUB_PUBLISHER.publish(TOPIC_NAME, json_data)
