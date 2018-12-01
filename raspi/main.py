@@ -4,95 +4,99 @@ import paho.mqtt.client as mqtt
 import sensorevent_pb2
 from google.cloud import pubsub_v1
 
-PUBLISHER = pubsub_v1.PublisherClient()
-TOPIC_NAME = PUBLISHER.topic_path('temp-humidity-monitoring', 'device-ingest')
 
-# GPIO
-BUZZER = 23
-TEMP_LED_RED = 5
-TEMP_LED_YELLOW = 6
-TEMP_LED_GREEN = 13
-HUMI_LED_RED = 17
-HUMI_LED_GREEN = 27
-HUMI_LED_BLUE = 22
+class HubDevice:
+  def __init__(self):
+    self.CLOUD_PUBSUB_PUBLISHER = pubsub_v1.PublisherClient()
+    self.TOPIC_NAME = self.CLOUD_PUBSUB_PUBLISHER.topic_path('temp-humidity-monitoring', 'device-ingest')
 
-CLOUD_REFRESH_INTERVAL = 15
-last_cloud_refresh = 0
+    # GPIO
+    self.BUZZER = 23
+    self.TEMP_LED_RED = 5
+    self.TEMP_LED_YELLOW = 6
+    self.TEMP_LED_GREEN = 13
+    self.HUMI_LED_RED = 17
+    self.HUMI_LED_GREEN = 27
+    self.HUMI_LED_BLUE = 22
 
-def on_connect(client, userdata, flags, rc):
-  client.subscribe("events", 2)
+    self.CLOUD_REFRESH_INTERVAL = 15
+    self.last_cloud_refresh = 0
 
-def send_to_the_clouds(data):
-  min_refresh_timestamp = last_cloud_refresh + CLOUD_REFRESH_INTERVAL
-  if data.timestamp >= min_refresh_timestamp:
-    json_data = json.dumps(data)
-    PUBLISHER.publish(TOPIC_NAME, json_data)
-    last_cloud_refresh = data.timestamp
-    print json_data
+    self.MQTT_CLIENT = mqtt.Client("hub-device")
+    self.MQTT_CLIENT.on_connect = self.on_connect
+    self.MQTT_CLIENT.on_message = self.on_message
+    self.MQTT_CLIENT.connect("localhost", 1883)
+    self.configureGPIO()
+    self.MQTT_CLIENT.loop_forever()
 
-def _updateTempLeds(green, yellow, red):
-  GPIO.output(TEMP_LED_GREEN, GPIO.HIGH if green else GPIO.LOW)
-  GPIO.output(TEMP_LED_YELLOW, GPIO.HIGH if yellow else GPIO.LOW)
-  GPIO.output(TEMP_LED_RED, GPIO.HIGH if red else GPIO.LOW)
+  def on_connect(self, client, userdata, flags, rc):
+    self.MQTT_CLIENT.subscribe("events", 2)
 
-def _updateHumiLeds(blue, green, red):
-  GPIO.output(HUMI_LED_BLUE, GPIO.HIGH if blue else GPIO.LOW)
-  GPIO.output(HUMI_LED_GREEN, GPIO.HIGH if green else GPIO.LOW)
-  GPIO.output(HUMI_LED_RED, GPIO.HIGH if red else GPIO.LOW)
+  def send_to_the_clouds(self, data):
+    min_refresh = self.last_cloud_refresh + self.CLOUD_REFRESH_INTERVAL
+    print min_refresh
+    if data.timestamp >= min_refresh:
+      json_data = json.dumps(data)
+      self.CLOUD_PUBSUB_PUBLISHER.publish(TOPIC_NAME, json_data)
+      self.last_cloud_refresh = data.timestamp
+      print json_data
 
-def _updateDashboard(temp, humi):
-  if    temp < 20:
-    _updateTempLeds(True, False, False)
-  elif  temp >= 20 and temp < 30:
-    _updateTempLeds(False, True, False)
-  else:
-    _updateTempLeds(False, False, True)
+  def _updateTempLeds(self, green, yellow, red):
+    GPIO.output(self.TEMP_LED_GREEN, GPIO.HIGH if green else GPIO.LOW)
+    GPIO.output(self.TEMP_LED_YELLOW, GPIO.HIGH if yellow else GPIO.LOW)
+    GPIO.output(self.TEMP_LED_RED, GPIO.HIGH if red else GPIO.LOW)
 
-  if   humi < 40:
-    _updateHumiLeds(True, False, False)
-  elif humi >= 40 and humi < 70:
-    _updateHumiLeds(False, True, False)
-  else:
-    _updateHumiLeds(False, False, True)
+  def _updateHumiLeds(self, blue, green, red):
+    GPIO.output(self.HUMI_LED_BLUE, GPIO.HIGH if blue else GPIO.LOW)
+    GPIO.output(self.HUMI_LED_GREEN, GPIO.HIGH if green else GPIO.LOW)
+    GPIO.output(self.HUMI_LED_RED, GPIO.HIGH if red else GPIO.LOW)
 
-def on_message(client, userdata, msg):
-  print "message"
-  event = sensorevent_pb2.SensorEvent()
-  event.ParseFromString(msg.payload)
-  _updateDashboard(event.temperature, event.humidity)
-  send_to_the_clouds({
-    'timestamp': event.timestamp,
-    'temperature': event.temperature,
-    'humidity': event.humidity,
-    'device_id': event.deviceId
-  })
+  def _updateDashboard(self, temp, humi):
+    if    temp < 20:
+      self._updateTempLeds(True, False, False)
+    elif  temp >= 20 and temp < 30:
+      self._updateTempLeds(False, True, False)
+    else:
+      self._updateTempLeds(False, False, True)
 
-def configureGPIO():
-  GPIO.setmode(GPIO.BCM)
+    if   humi < 40:
+      self._updateHumiLeds(True, False, False)
+    elif humi >= 40 and humi < 70:
+      self._updateHumiLeds(False, True, False)
+    else:
+      self._updateHumiLeds(False, False, True)
 
-  GPIO.setup(TEMP_LED_RED, GPIO.OUT)
-  GPIO.setup(TEMP_LED_YELLOW, GPIO.OUT)
-  GPIO.setup(TEMP_LED_GREEN, GPIO.OUT)
-  GPIO.setup(HUMI_LED_BLUE, GPIO.OUT)
-  GPIO.setup(HUMI_LED_GREEN, GPIO.OUT)
-  GPIO.setup(HUMI_LED_RED, GPIO.OUT)
+  def on_message(self, client, userdata, msg):
+    print "message"
+    event = sensorevent_pb2.SensorEvent()
+    event.ParseFromString(msg.payload)
+    self._updateDashboard(event.temperature, event.humidity)
+    self.send_to_the_clouds({
+      'timestamp': event.timestamp,
+      'temperature': event.temperature,
+      'humidity': event.humidity,
+      'device_id': event.deviceId
+    })
 
-  GPIO.output(TEMP_LED_RED, GPIO.LOW)
-  GPIO.output(TEMP_LED_YELLOW, GPIO.LOW)
-  GPIO.output(TEMP_LED_GREEN, GPIO.LOW)
-  GPIO.output(HUMI_LED_BLUE, GPIO.LOW)
-  GPIO.output(HUMI_LED_GREEN, GPIO.LOW)
-  GPIO.output(HUMI_LED_RED, GPIO.LOW)
+  def configureGPIO(self):
+    GPIO.setmode(GPIO.BCM)
+
+    GPIO.setup(self.TEMP_LED_RED, GPIO.OUT)
+    GPIO.setup(self.TEMP_LED_YELLOW, GPIO.OUT)
+    GPIO.setup(self.TEMP_LED_GREEN, GPIO.OUT)
+    GPIO.setup(self.HUMI_LED_BLUE, GPIO.OUT)
+    GPIO.setup(self.HUMI_LED_GREEN, GPIO.OUT)
+    GPIO.setup(self.HUMI_LED_RED, GPIO.OUT)
+
+    GPIO.output(self.TEMP_LED_RED, GPIO.LOW)
+    GPIO.output(self.TEMP_LED_YELLOW, GPIO.LOW)
+    GPIO.output(self.TEMP_LED_GREEN, GPIO.LOW)
+    GPIO.output(self.HUMI_LED_BLUE, GPIO.LOW)
+    GPIO.output(self.HUMI_LED_GREEN, GPIO.LOW)
+    GPIO.output(self.HUMI_LED_RED, GPIO.LOW)
 
 def main():
-  client = mqtt.Client("hub-device")
-  client.on_connect = on_connect
-  client.on_message = on_message
-  client.connect("localhost", 1883)
-
-  configureGPIO()
-
-  client.loop_forever()
+  hub = DeviceHub()
 
 if __name__ == '__main__':
   main()
