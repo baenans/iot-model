@@ -61,6 +61,11 @@ let C = (() => {
     for(var i = 0, max = radios.length; i < max; i++) {
       radios[i].addEventListener('click', (e) => {changeGraphDisplayInterval(e.target.value)} )
     }
+
+    fetch('https://us-central1-temp-humidity-monitoring.cloudfunctions.net/threeDaysReport')
+    .then(res => { console.log(res); return res.json()}).then(data => {
+      document.getElementById('reportData').innerText = JSON.stringify(data, null, 2)
+    })
   }
 
   let changeGraphDisplayInterval = (value) => {
