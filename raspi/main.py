@@ -111,6 +111,15 @@ class HubDevice:
     rgb_led_status.blue = blue
     self.MQTT_CLIENT.publish('rgbstatus', rgb_led_status.SerializeToString())
 
+  def subscribe_to_rgb_actuator(self):
+    subscriber = pubsub_v1.SubscriberClient()
+    subscription_path = subscriber.subscription_path(
+      'temp-humidity-monitoring', 'rgb-status')
+    def callback(message):
+      print('Received message: {}'.format(message))
+      message.ack()
+    subscriber.subscribe(subscription_path, callback=callback)
+
 def main():
   hub = HubDevice()
 
