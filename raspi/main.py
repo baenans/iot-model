@@ -114,8 +114,15 @@ class HubDevice:
 
   def subscribe_to_rgb_actuator(self):
     subscriber = pubsub_v1.SubscriberClient()
+
+    topic_path = subscriber.topic_path('temp-humidity-monitoring', 'rgb-status')
     subscription_path = subscriber.subscription_path(
-      'temp-humidity-monitoring', 'rgb-status')
+      'temp-humidity-monitoring', 'rgb-status-dev-hub')
+    subscription = subscriber.create_subscription(
+        subscription_path, topic_path)
+    
+    print('Subscription created: {}'.format(subscription))
+
     def callback(message):
       print('Received message: {}'.format(message))
       message.ack()
