@@ -1,14 +1,15 @@
 import json, time
 import RPi.GPIO as GPIO
 import paho.mqtt.client as mqtt
-import sensorevent_pb2
 from google.cloud import pubsub_v1
-
+# protobuffs
+import sensorevent_pb2
+import rgbledstatus_pb2
 
 class HubDevice:
   def __init__(self):
     self.CLOUD_PUBSUB_PUBLISHER = pubsub_v1.PublisherClient()
-    self.CLOUD_PUBSUB_TOPIC_NAME = self.CLOUD_PUBSUB_PUBLISHER.topic_path('temp-humidity-monitoring', 'device-ingest')
+    self.CLOUD_PUBSUB_PUBLISH_TOPIC_NAME = self.CLOUD_PUBSUB_PUBLISHER.topic_path('temp-humidity-monitoring', 'device-ingest')
 
     # GPIO
     self.BUZZER = 23
@@ -29,30 +30,46 @@ class HubDevice:
     self.configureGPIO()
     self.MQTT_CLIENT.loop_forever()
 
+  # Callback of MQTT connect, subscribes to ESP8266 Temp Sensor
   def on_connect(self, client, userdata, flags, rc):
     self.MQTT_CLIENT.subscribe("events", 2)
 
+  # Handles MQTT messages from ESP8266 Temp Sensor
+  def on_message(self, client, userdata, msg):
+    event = sensorevent_pb2.SensorEvent()
+    event.ParseFromString(msg.payload)
+    self._updateDashboard(event.temperature, event.humidity)
+    self.send_to_the_clouds({
+      'timestamp': event.timestamp,
+      'temperature': event.temperature,
+      'humidity': event.humidity,
+      'device_id': 'CNlmx974NM86zIfbPni2' # TODO: (fbaena@) dynamic devices id
+    })
+
+  # Uploads information to Google Cloud 
   def send_to_the_clouds(self, data):
     min_refresh = self.last_cloud_refresh + self.CLOUD_REFRESH_INTERVAL
     if data['timestamp'] >= min_refresh:
       json_data = json.dumps(data)
-      self.CLOUD_PUBSUB_PUBLISHER.publish(self.CLOUD_PUBSUB_TOPIC_NAME, json_data)
+      self.CLOUD_PUBSUB_PUBLISHER.publish(self.CLOUD_PUBSUB_PUBLISH_TOPIC_NAME, json_data)
       self.last_cloud_refresh = data['timestamp']
       print json_data
     else:
       print "Not refreshing cloud on %d" % data['timestamp']
   
-
+  # Updates status of temperature leds
   def _updateTempLeds(self, green, yellow, red):
     GPIO.output(self.TEMP_LED_GREEN, GPIO.HIGH if green else GPIO.LOW)
     GPIO.output(self.TEMP_LED_YELLOW, GPIO.HIGH if yellow else GPIO.LOW)
     GPIO.output(self.TEMP_LED_RED, GPIO.HIGH if red else GPIO.LOW)
 
+  # Updates the humidity LEDs
   def _updateHumiLeds(self, blue, green, red):
     GPIO.output(self.HUMI_LED_BLUE, GPIO.HIGH if blue else GPIO.LOW)
     GPIO.output(self.HUMI_LED_GREEN, GPIO.HIGH if green else GPIO.LOW)
     GPIO.output(self.HUMI_LED_RED, GPIO.HIGH if red else GPIO.LOW)
 
+  # Updates the status in the raspberry dashboard
   def _updateDashboard(self, temp, humi):
     if    temp < 20:
       self._updateTempLeds(True, False, False)
@@ -68,17 +85,7 @@ class HubDevice:
     else:
       self._updateHumiLeds(False, False, True)
 
-  def on_message(self, client, userdata, msg):
-    event = sensorevent_pb2.SensorEvent()
-    event.ParseFromString(msg.payload)
-    self._updateDashboard(event.temperature, event.humidity)
-    self.send_to_the_clouds({
-      'timestamp': event.timestamp,
-      'temperature': event.temperature,
-      'humidity': event.humidity,
-      'device_id': 'CNlmx974NM86zIfbPni2' # TODO: (fbaena@) dynamic devices id
-    })
-
+  # Configures Raspberry GPIO ports for dashboard
   def configureGPIO(self):
     GPIO.setmode(GPIO.BCM)
 
@@ -95,6 +102,14 @@ class HubDevice:
     GPIO.output(self.HUMI_LED_BLUE, GPIO.LOW)
     GPIO.output(self.HUMI_LED_GREEN, GPIO.LOW)
     GPIO.output(self.HUMI_LED_RED, GPIO.LOW)
+
+  # Updates status on the ESP8266 RGB Actuator
+  def updateRGBActuatorStatus(self, red=0, green=0, blue=0):
+    rgb_led_status = rgbledstatus_pb2.RGBLedStatus()
+    rgb_led_status.red = red
+    rgb_led_status.green = green
+    rgb_led_status.blue = blue
+    self.MQTT_CLIENT.publish('rgbstatus', rgb_led_status.SerializeToString())
 
 def main():
   hub = HubDevice()

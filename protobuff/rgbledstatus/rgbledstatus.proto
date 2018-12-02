@@ -1,0 +1,8 @@
+syntax = "proto2";
+package pb;
+
+message RGBLedStatus {
+    required int32 red = 1;
+    required int32 green = 2;
+    required int32 blue = 3;
+}

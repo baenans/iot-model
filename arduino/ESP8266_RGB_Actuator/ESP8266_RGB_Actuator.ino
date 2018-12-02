@@ -1,24 +1,25 @@
 #define ESP8266
-#define DHT_PIN 13
-#define EVENT_INTERVAL 10 * 1000
 #include "config.h"
-#include "sensorevent.pb.h"
+#include "rgbledstatus.pb.h"
 #include <pb_common.h>
 #include <pb.h>
-#include <pb_encode.h>
 #include <pb_decode.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <time.h>
-#include <DHTesp.h>
 
-DHTesp dht;
+int RED = D5;
+int GREEN = D6;
+int BLUE = D7;
+
 WiFiClient wClient;
 PubSubClient client(wClient);
 
 void setup() {
   Serial.begin(9600);
-  dht.setup(DHT_PIN, DHTesp::DHT11); 
+
+  pinMode(RED, OUTPUT);
+  pinMode(GREEN, OUTPUT);
+  pinMode(BLUE, OUTPUT);
   
   WiFi.mode(WIFI_STA);
   WiFi.begin(SSID, PASSWORD);
@@ -29,20 +30,15 @@ void setup() {
   Serial.println("WiFi connected!");
 
   client.setServer(MQTT_SERVER, 1883);
-  
-  configTime(0, 0, "pool.ntp.org"); 
-  Serial.println("\nTime Sync");
-  while (!time(nullptr)) {
-    Serial.print(".");
-    delay(1000);
-  }
+  client.setCallback(callback);
 }
 
 void _reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    if (client.connect("ESP8266Client")) {
+    if (client.connect("ESP8266_RGB_Actuator")) {
       Serial.println("Connected to MQTT!");
+      client.subscribe("rgbstatus");  // resuscribe to topic
     } else {
       Serial.print("Failed, rc=");
       Serial.print(client.state());
@@ -52,18 +48,41 @@ void _reconnect() {
   }
 }
 
-long lastMsg = 0;
-
-void mqttPublish(pb_SensorEvent event) {
-  uint8_t buffer[128];
-  pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-  
-  if (!pb_encode(&stream, pb_SensorEvent_fields, &event)){
-    Serial.println("Failure encoding Sensor Event proto");
-    return;
-  }
-  client.publish("events", buffer, stream.bytes_written);
+void updateLedColor(int red, int green, int blue) {
+  analogWrite(RED, red);
+  analogWrite(GREEN, green);
+  analogWrite(BLUE, blue);
 }
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("]: ");
+
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+
+  pb_RGBLedStatus message = pb_RGBLedStatus_init_zero;
+  pb_istream_t stream = pb_istream_from_buffer(payload, length);
+  bool status;
+    
+  status = pb_decode(&stream, pb_RGBLedStatus_fields, &message);
+    
+  if (!status) {
+    Serial.print("Decoding failed");
+    Serial.println();
+  } else {
+    updateLedColor(
+      (int)message.red,
+      (int)message.green,
+      (int)message.blue
+     );
+  }
+  
+}
+
 
 void loop() {
   if (!client.connected())
@@ -71,19 +90,4 @@ void loop() {
 
   client.loop();
   
-  long now = millis();
-  time_t timestamp = time(nullptr);
-  
-  if (now - lastMsg > 2000) {
-    lastMsg = now;
-
-    TempAndHumidity sensorValues = dht.getTempAndHumidity();
-    pb_SensorEvent event = pb_SensorEvent_init_zero;
-    event.deviceId = 1;
-    event.timestamp = timestamp;
-    event.temperature = sensorValues.temperature;
-    event.humidity = sensorValues.humidity;
-    
-    mqttPublish(event);
-  }
 }
