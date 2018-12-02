@@ -6,8 +6,9 @@ SECRETS
 /raspi/venv/
 raspi/sensorevent_pb2.pyc
 
-# Arduino client
+# Arduino clients
 arduino/ESP8266_Temp_Sensor/config.h
+arduino/ESP8266_RGB_Actuator/config.h
 
 # Logs
 logs
