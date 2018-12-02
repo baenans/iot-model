@@ -118,7 +118,8 @@ class HubDevice:
       'temp-humidity-monitoring', 'rgb-status-dev-hub')
 
     def callback(message):
-      print('Received message: {}'.format(message))
+      cloud_led_status = json.loads(message.data)
+      print('Received message: {}'.format(cloud_led_status))
       message.ack()
     subscriber.subscribe(subscription_path, callback=callback)
 
