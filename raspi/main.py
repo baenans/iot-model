@@ -119,7 +119,12 @@ class HubDevice:
 
     def callback(message):
       cloud_led_status = json.loads(message.data)
-      print('Received message: {}'.format(cloud_led_status))
+      self.updateRGBActuatorStatus(
+        cloud_led_status.red,
+        cloud_led_status.green,
+        cloud_led_status.blue
+      )
+      print('UPDATING status of RGB Actuator: {}'.format(cloud_led_status))
       message.ack()
     subscriber.subscribe(subscription_path, callback=callback)
 
