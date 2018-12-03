@@ -55,9 +55,9 @@ class HubDevice:
       json_data = json.dumps(data)
       self.CLOUD_PUBSUB_PUBLISHER.publish(self.CLOUD_PUBSUB_PUBLISH_TOPIC_NAME, json_data)
       self.last_cloud_refresh = data['timestamp']
-      print json_data
+      print '[>] Updating values to the Cloud: {}'.format(json_data)
     else:
-      print "Not refreshing cloud on %d" % data['timestamp']
+      print '[>] Not updating values to the Cloud on {}'.format(data['timestamp'])
   
   # Updates status of temperature leds
   def _updateTempLeds(self, green, yellow, red):
@@ -125,7 +125,7 @@ class HubDevice:
     )
 
     def callback(message):
-      # {"red":255, "green":0, "blue":0}
+      # {"red":255, "green":0, "blue":0 }
       cloud_status = json.loads(message.data)
       message.ack()
       led_status = rgbledstatus_pb2.RGBLedStatus()
@@ -133,7 +133,7 @@ class HubDevice:
       led_status.green = cloud_status['green']
       led_status.blue = cloud_status['blue']
       mqtt_client.publish('rgbstatus', led_status.SerializeToString())
-      print(message.data)
+      print '[<] Incoming PubSub Message: {}'.format(message.data)
     
     client.subscribe(subscription_name, callback)
 
