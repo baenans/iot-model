@@ -66,6 +66,16 @@ let C = (() => {
     .then(res => { console.log(res); return res.json()}).then(data => {
       document.getElementById('reportData').innerText = JSON.stringify(data, null, 2)
     })
+
+    document.getElementById('uColor').addEventListener('click', updateColor)
+  }
+
+  let updateColor = () => {
+    let r = document.getElementById('iR').value || 0
+    let g = document.getElementById('iG').value || 0
+    let b = document.getElementById('iB').value || 0
+    fetch(`http://127.0.0.1:8000/rgb?r=${r}&g=${g}&b=${b}`, {mode:'no-cors'})
+    document.getElementById('prevColor').style.backgroundColor = `rgb(${r}, ${g}, ${b})`
   }
 
   let changeGraphDisplayInterval = (value) => {

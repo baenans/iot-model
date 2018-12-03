@@ -20,7 +20,7 @@ class HubDevice:
     self.HUMI_LED_GREEN = 27
     self.HUMI_LED_BLUE = 22
 
-    self.CLOUD_REFRESH_INTERVAL = 15
+    self.CLOUD_REFRESH_INTERVAL = 10
     self.last_cloud_refresh = 0
 
     self.MQTT_CLIENT = mqtt.Client("hub-device")
@@ -69,14 +69,21 @@ class HubDevice:
     GPIO.output(self.HUMI_LED_GREEN, GPIO.HIGH if green else GPIO.LOW)
     GPIO.output(self.HUMI_LED_RED, GPIO.HIGH if red else GPIO.LOW)
 
+  def _updateBuzzer(self, on):
+    GPIO.output(self.BUZZER, GPIO.HIGH if on else GPIO.LOW)
+
   # Updates the status in the raspberry dashboard
   def _updateDashboard(self, temp, humi):
     if    temp < 20:
       self._updateTempLeds(True, False, False)
+      self._updateBuzzer(False)
     elif  temp >= 20 and temp < 30:
       self._updateTempLeds(False, True, False)
+      self._updateBuzzer(False)
     else:
       self._updateTempLeds(False, False, True)
+      self._updateBuzzer(True)
+      # buzzer update TODO: (fbaena)
 
     if   humi < 40:
       self._updateHumiLeds(True, False, False)
@@ -95,6 +102,7 @@ class HubDevice:
     GPIO.setup(self.HUMI_LED_BLUE, GPIO.OUT)
     GPIO.setup(self.HUMI_LED_GREEN, GPIO.OUT)
     GPIO.setup(self.HUMI_LED_RED, GPIO.OUT)
+    GPIO.setup(self.BUZZER, GPIO.OUT)
 
     GPIO.output(self.TEMP_LED_RED, GPIO.LOW)
     GPIO.output(self.TEMP_LED_YELLOW, GPIO.LOW)
@@ -102,6 +110,7 @@ class HubDevice:
     GPIO.output(self.HUMI_LED_BLUE, GPIO.LOW)
     GPIO.output(self.HUMI_LED_GREEN, GPIO.LOW)
     GPIO.output(self.HUMI_LED_RED, GPIO.LOW)
+    GPIO.output(self.BUZZER, GPIO.LOW)
 
   # Updates status on the ESP8266 RGB Actuator
   def updateRGBActuatorStatus(self, red=0, green=0, blue=0):

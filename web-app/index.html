@@ -35,6 +35,13 @@
   <div class='gauges'>
     <div id="tempGauge" style="width:100px; height:80px"></div>
     <div id="humidGauge" style="width:100px; height:80px"></div>
+    <div style="display: inline-block; margin-left: 100px">
+      <div id='prevColor' style="width: 30px; height: 30px;"></div>
+      Red: <input type="number" min="0" max="255" id='iR' style="width: 30px;"> 
+      Green: <input type="number" min="0" max="255" id='iG' style="width: 30px;"> 
+      Blue: <input type="number" min="0" max="255" id='iB' style="width: 30px;">
+      <button id='uColor'>Update</button>
+    </div>
     <div>on <span id='timeOfRead'></span></div>
   </div>
 
@@ -69,8 +76,9 @@
     <canvas id="linearChart" width="400" height="300"></canvas>
   </main>
 
+  <h3>Reporting</h3>
+  <p>Bigquery</p>
   <code id="reportData">
-    
   </code>
 </body>
 </html>
