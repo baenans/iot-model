@@ -1,5 +1,6 @@
 const functions = require('firebase-functions');
 const {BigQuery} = require('@google-cloud/bigquery');
+const {PubSub} = require('@google-cloud/pubsub');
 const admin = require('firebase-admin');
 const cors = require('cors')({origin: true});
 
@@ -16,6 +17,15 @@ firestore.settings({ timestampsInSnapshots: true });
 const bigquery = new BigQuery();
 const dataset = bigquery.dataset('device_data');
 const table = dataset.table('telemetry');
+
+/**
+ * PubSub Client
+ */
+const projectId = 'temp-humidity-monitoring';
+const pubsubClient = new PubSub({
+  projectId
+});
+const topicName = 'device-output';
 
 exports.ingestDeviceData = functions.pubsub.topic('device-ingest').onPublish((message) => {
   const payload = message.json;
@@ -70,3 +80,12 @@ exports.threeDaysReport = functions.https.onRequest((req, res) => {
       });
     });
 });
+
+exports.onColorChanged = functions.firestore
+  .document('devices/CNlmx974NM86zIfbPni2').onUpdate((change, context) => {
+    const dataBuffer = Buffer.from(JSON.stringify(change.after.data()));
+    return pubsubClient
+      .topic(topicName)
+      .publisher()
+      .publish(dataBuffer);
+  });

@@ -1,11 +1,28 @@
-let C = (() => {
+/**
+ * Imported from David Walsh's Blog // https://davidwalsh.name/javascript-debounce-function
+ */
+function debounce(func, wait, immediate) {
+	var timeout;
+	return function() {
+		var context = this, args = arguments;
+		var later = function() {
+			timeout = null;
+			if (!immediate) func.apply(context, args);
+		};
+		var callNow = immediate && !timeout;
+		clearTimeout(timeout);
+		timeout = setTimeout(later, wait);
+		if (callNow) func.apply(context, args);
+	};
+};
+
+let controller = (() => {
 
   const MS_PER_MINUTE = 60000
 
   let db
   let devices = []
   let currentDevice = 0
-  let limit = 100
   let unsubscribeDeviceFromSnapshots
   let ctx
   let lineChart
@@ -67,15 +84,21 @@ let C = (() => {
       document.getElementById('reportData').innerText = JSON.stringify(data, null, 2)
     })
 
-    document.getElementById('uColor').addEventListener('click', updateColor)
+    document.getElementById('rgbaLedColor').addEventListener('change', debounce(updateColor, 150))
   }
 
-  let updateColor = () => {
-    let r = document.getElementById('iR').value || 0
-    let g = document.getElementById('iG').value || 0
-    let b = document.getElementById('iB').value || 0
-    fetch(`http://127.0.0.1:8000/rgb?r=${r}&g=${g}&b=${b}`, {mode:'no-cors'})
-    document.getElementById('prevColor').style.backgroundColor = `rgb(${r}, ${g}, ${b})`
+  let updateColor = (e) => {
+    let value = e.target.value
+      .match(/[A-Za-z0-9]{2}/g)
+      .map(v => parseInt(v, 16))
+
+    let [red, green, blue] = value;
+
+    db.collection("devices").doc(devices[currentDevice]).set({
+      red,
+      green,
+      blue
+    }) 
   }
 
   let changeGraphDisplayInterval = (value) => {
@@ -211,4 +234,4 @@ let C = (() => {
   }
 })()
 
-window.addEventListener('DOMContentLoaded', C.initialize)
+window.addEventListener('DOMContentLoaded', controller.initialize)

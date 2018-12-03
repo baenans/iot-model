@@ -36,11 +36,9 @@
     <div id="tempGauge" style="width:100px; height:80px"></div>
     <div id="humidGauge" style="width:100px; height:80px"></div>
     <div style="display: inline-block; margin-left: 100px">
-      <div id='prevColor' style="width: 30px; height: 30px;"></div>
-      Red: <input type="number" min="0" max="255" id='iR' style="width: 30px;"> 
-      Green: <input type="number" min="0" max="255" id='iG' style="width: 30px;"> 
-      Blue: <input type="number" min="0" max="255" id='iB' style="width: 30px;">
-      <button id='uColor'>Update</button>
+
+      <input type="color" id="rgbaLedColor" value="#000000" style="margin-bottom: 10px">
+      <label for="head">RGB Actuator</label>
     </div>
     <div>on <span id='timeOfRead'></span></div>
   </div>
