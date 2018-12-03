@@ -29,6 +29,7 @@ class HubDevice:
     self.MQTT_CLIENT.on_message = self.on_message
     self.MQTT_CLIENT.connect("localhost", 1883)
     self.configureGPIO()
+    self.RGBAactuator()
     self.MQTT_CLIENT.loop_forever()
 
   # Callback of MQTT connect, subscribes to ESP8266 Temp Sensor
@@ -135,14 +136,6 @@ class HubDevice:
       print(message.data)
     
     client.subscribe(subscription_name, callback)
-
-  # Updates status on the ESP8266 RGB Actuator
-  def updateRGBActuatorStatus(self, red=0, green=0, blue=0):
-    rgb_led_status = rgbledstatus_pb2.RGBLedStatus()
-    rgb_led_status.red = red
-    rgb_led_status.green = green
-    rgb_led_status.blue = blue
-    self.MQTT_CLIENT.publish('rgbstatus', rgb_led_status.SerializeToString())
 
 def main():
   HubDevice()
