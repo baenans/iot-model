@@ -8,6 +8,7 @@ import rgbledstatus_pb2
 
 class HubDevice:
   def __init__(self):
+    self.GOOGLE_CLOUD_PROJECT = 'temp-humidity-monitoring'
     self.CLOUD_PUBSUB_PUBLISHER = pubsub_v1.PublisherClient()
     self.CLOUD_PUBSUB_PUBLISH_TOPIC_NAME = self.CLOUD_PUBSUB_PUBLISHER.topic_path('temp-humidity-monitoring', 'device-ingest')
 
@@ -70,6 +71,7 @@ class HubDevice:
     GPIO.output(self.HUMI_LED_RED, GPIO.HIGH if red else GPIO.LOW)
 
   def _updateBuzzer(self, on):
+    # TODO: fbaena@ implement threads to do non-blocking SOS signal
     GPIO.output(self.BUZZER, GPIO.HIGH if on else GPIO.LOW)
 
   # Updates the status in the raspberry dashboard
@@ -83,7 +85,6 @@ class HubDevice:
     else:
       self._updateTempLeds(False, False, True)
       self._updateBuzzer(True)
-      # buzzer update TODO: (fbaena)
 
     if   humi < 40:
       self._updateHumiLeds(True, False, False)
@@ -112,6 +113,29 @@ class HubDevice:
     GPIO.output(self.HUMI_LED_RED, GPIO.LOW)
     GPIO.output(self.BUZZER, GPIO.LOW)
 
+  def RGBAactuator(self):
+    client = pubsub_v1.SubscriberClient()
+
+    mqtt_client = self.MQTT_CLIENT
+
+    subscription_name = 'projects/{project_id}/subscriptions/{sub}'.format(
+      project_id=self.GOOGLE_CLOUD_PROJECT,
+      sub='dev-out'
+    )
+
+    def callback(message):
+      # {"red":255, "green":0, "blue":0}
+      cloud_status = json.loads(message.data)
+      message.ack()
+      led_status = rgbledstatus_pb2.RGBLedStatus()
+      led_status.red = cloud_status['red']
+      led_status.green = cloud_status['green']
+      led_status.blue = cloud_status['blue']
+      mqtt_client.publish('rgbstatus', led_status.SerializeToString())
+      print(message.data)
+    
+    client.subscribe(subscription_name, callback)
+
   # Updates status on the ESP8266 RGB Actuator
   def updateRGBActuatorStatus(self, red=0, green=0, blue=0):
     rgb_led_status = rgbledstatus_pb2.RGBLedStatus()
@@ -121,7 +145,7 @@ class HubDevice:
     self.MQTT_CLIENT.publish('rgbstatus', rgb_led_status.SerializeToString())
 
 def main():
-  hub = HubDevice()
+  HubDevice()
 
 if __name__ == '__main__':
   main()
