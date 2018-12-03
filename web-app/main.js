@@ -80,8 +80,22 @@ let controller = (() => {
     }
 
     fetch('https://us-central1-temp-humidity-monitoring.cloudfunctions.net/threeDaysReport')
-    .then(res => { console.log(res); return res.json()}).then(data => {
-      document.getElementById('reportData').innerText = JSON.stringify(data, null, 2)
+    .then(res => res.json()).then(metrics => {
+
+      let reportDataDiv = document.getElementById('reportData')
+
+      metrics.forEach(met => {
+        let metricTemplate = `
+          <div style='display: inline-block; padding: 8px 10px;'>
+            <div style='font-size: 14px; margin-bottom: 5px'>${met.day}/${met.month}/${met.year}</div>
+            <div><b>Temperature</b></div>
+            <div>Min: ${met.min_temperature.toFixed(2)} Max: ${met.max_temperature.toFixed(2)} Avg: ${met.average_temperature.toFixed(2)}</div>
+            <div><b>Humidity</b></div>
+            <div>Min: ${met.min_humidity.toFixed(2)} Max: ${met.max_humidity.toFixed(2)} Avg: ${met.average_humidity.toFixed(2)}</div>
+          </div>`
+          reportDataDiv.innerHTML += metricTemplate
+      })
+
     })
 
     document.getElementById('rgbaLedColor').addEventListener('change', debounce(updateColor, 150))
